@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from "cookie-parser"
+// how do we do a http handshake to upgrade to websoket protocol
 
 const app = express() // 
 

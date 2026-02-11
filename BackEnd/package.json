@@ -17,6 +17,7 @@
     "mongodb": "^7.1.0",
     "mongoose": "^9.2.0",
     "nodemon": "^3.1.11",
-    "prettier": "^3.8.1"
+    "prettier": "^3.8.1",
+    "socket.io": "^4.8.3"
   }
 }
