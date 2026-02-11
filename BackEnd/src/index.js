@@ -1,11 +1,50 @@
-import dotenv from 'dotenv';
-import http from 'http';
-import crypto from 'crypto';
+import dotenv from "dotenv";
+import http from "http";
+import { Server } from "socket.io";
 import connectDB from "./db/index.js";
-import app from "./app.js"
+import app from "./app.js";
 
+dotenv.config();
 
-dotenv.config()
+connectDB()
+  .then(() => {
+    const server = http.createServer(app);
+
+    // 🔥 Attach Socket.IO to HTTP server
+    const io = new Server(server, {
+      cors: {
+        origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+        credentials: true,
+      },
+    });
+
+    // 🔥 Socket connection
+    io.on("connection", (socket) => {
+      console.log("User connected:", socket.id);
+
+      socket.on("send-message", (data) => {
+        console.log("Message received:", data);
+
+        // broadcast to all connected clients
+        io.emit("receive-message", data);
+      });
+
+      socket.on("disconnect", () => {
+        console.log("User disconnected:", socket.id);
+      });
+    });
+
+    const PORT = process.env.PORT || 8000;
+
+    server.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.log("DB Error", error);
+    process.exit(1);
+  });
+
 
 
 // connectDB()
@@ -19,51 +58,53 @@ dotenv.config()
 //         throw error;
 //     })
 
-    connectDB()
-    .then(()=>{
-        const server = http.createServer(app);
-        // webshoket handshake implementation
-        server.on("upgrade", (req, soket, head)=>{
-            if(req.headers["upgrade"]!=="websoket"){
-                soket.destroy();
-                return;
-            }
-            const key = req.headers["sec-websocket-key"]
-            if (!key) {
-                soket.destroy()
-                return
-            }
-            const acceptKey = crypto
-            .createHash("sha1")
-            .update(key+"258EAFA5-E914-47DA-95CA-C5AB0DC85B11")
-            .digest("base64")
 
-            soket.write(
-                "HTTP/1.1 101 Switching Protocols\r\n" +
-          "Upgrade: websocket\r\n" +
-          "Connection: Upgrade\r\n" +
-          `Sec-WebSocket-Accept: ${acceptKey}\r\n` +
-          "\r\n"
-            )
-            console.log("✅ WebSocket handshake successful");
+
+//     connectDB()
+//     .then(()=>{
+//         const server = http.createServer(app);
+//         // webshoket handshake implementation
+//         server.on("upgrade", (req, soket, head)=>{
+//             if(req.headers["upgrade"]!=="websoket"){
+//                 soket.destroy();
+//                 return;
+//             }
+//             const key = req.headers["sec-websocket-key"]
+//             if (!key) {
+//                 soket.destroy()
+//                 return
+//             }
+//             const acceptKey = crypto
+//             .createHash("sha1")
+//             .update(key+"258EAFA5-E914-47DA-95CA-C5AB0DC85B11")
+//             .digest("base64")
+
+//             soket.write(
+//                 "HTTP/1.1 101 Switching Protocols\r\n" +
+//           "Upgrade: websocket\r\n" +
+//           "Connection: Upgrade\r\n" +
+//           `Sec-WebSocket-Accept: ${acceptKey}\r\n` +
+//           "\r\n"
+//             )
+//             console.log("✅ WebSocket handshake successful");
         
-        soket.on("data", (buffer) => {
-        console.log("Received raw data:", buffer);
-      });
+//         soket.on("data", (buffer) => {
+//         console.log("Received raw data:", buffer);
+//       });
 
-      soket.on("end", () => {
-        console.log("Client disconnected");
-      });
-    })
-const PORT = process.env.PORT || 8000
+//       soket.on("end", () => {
+//         console.log("Client disconnected");
+//       });
+//     })
+// const PORT = process.env.PORT || 8000
 
- server.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-    });
-  })
-  .catch((error) => {
-    console.log("DB Error", error);
-    process.exit(1);
+//  server.listen(PORT, () => {
+//       console.log(`🚀 Server running on port ${PORT}`);
+//     });
+//   })
+//   .catch((error) => {
+//     console.log("DB Error", error);
+//     process.exit(1);
 
 
-    })
+//     })
